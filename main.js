@@ -4,9 +4,21 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
-import GUI, { Controller } from "lil-gui";
+import GUI from "lil-gui";
+import { LoopSubdivision } from "./LoopSubdivision.js";
+import { CSG } from "./THREE-CSGMesh/dist/client/CSGMesh.js";
 
 //CONSTANT & VARIABLES
+
+const iterations = 1;
+
+const params = {
+  split: true, // optional, default: true
+  uvSmooth: false, // optional, default: false
+  preserveEdges: false, // optional, default: false
+  flatOnly: false, // optional, default: false
+  maxTriangles: Infinity, // optional, default: Infinity
+};
 
 //-- WINDOW
 let width = window.innerWidth;
@@ -33,6 +45,9 @@ const parameters = {
   },
   Bar() {
     createBar();
+  },
+  Joint() {
+    createJoint();
   },
   delete() {
     deleteTransformedObject();
@@ -72,15 +87,74 @@ var transformedObject = null;
 //-- GEOMETRY PARAMETERS
 //Create an empty array for storing all the cubes
 let sceneObjects = [];
-
 let boardCounter = 1;
 let beamCounter = 1;
 let barCounter = 1;
+let jointCounter = 1;
+let jointGroup;
+
+//-----------------------------------------------------------------------------------
+// LANDING PAGE
+//----------------------------------------------------------------------------------
+
+// Create landing page dynamically
+const landingPage = document.createElement("div");
+landingPage.id = "landing-page";
+landingPage.style.position = "absolute";
+landingPage.style.top = "0";
+landingPage.style.left = "0";
+landingPage.style.right = "0";
+landingPage.style.bottom = "0";
+landingPage.style.display = "flex";
+landingPage.style.flexDirection = "column";
+landingPage.style.alignItems = "center";
+landingPage.style.justifyContent = "center";
+landingPage.style.textAlign = "center";
+landingPage.style.color = "#333";
+landingPage.style.backgroundColor = "white";
+
+const title = document.createElement("h1");
+title.id = "title";
+title.innerText = "ReFurnish3d";
+title.style.fontSize = "24px";
+title.style.color = "black";
+title.style.border = "none";
+title.style.borderRadius = "5px";
+title.style.marginTop = "20px";
+title.style.fontFamily = "Moirai One, Josefin Sans, Arial, sans-serif";
+
+const createProjectButton = document.createElement("button");
+createProjectButton.id = "create-project-button";
+createProjectButton.innerText = "Create new project";
+createProjectButton.style.padding = "15px 30px";
+createProjectButton.style.fontSize = "18px";
+createProjectButton.style.cursor = "pointer";
+createProjectButton.style.backgroundColor = "#333";
+createProjectButton.style.color = "white";
+createProjectButton.style.border = "none";
+createProjectButton.style.borderRadius = "5px";
+createProjectButton.style.marginTop = "20px";
+createProjectButton.onclick = showProject;
+
+landingPage.appendChild(title);
+landingPage.appendChild(createProjectButton);
+document.body.appendChild(landingPage);
+
+const threejsContainer = document.createElement("div");
+threejsContainer.id = "threejs-container";
+threejsContainer.style.display = "none";
+document.body.appendChild(threejsContainer);
+
+function showProject() {
+  landingPage.style.display = "none";
+  threejsContainer.style.display = "block";
+  //exportButton.style.display = "block";
+  gui.domElement.style.display = "block";
+}
 
 //-----------------------------------------------------------------------------------
 // MAIN
 //-----------------------------------------------------------------------------------
-
 function main() {
   //GUI
   gui = new GUI();
@@ -90,6 +164,7 @@ function main() {
   addObjectFolder.add(parameters, "Board");
   addObjectFolder.add(parameters, "Beam");
   addObjectFolder.add(parameters, "Bar");
+  addObjectFolder.add(parameters, "Joint");
 
   //Add Object Settings
   const selectedObjectFolder = gui.addFolder("Selected Object");
@@ -145,7 +220,9 @@ function main() {
 
   //RAYCASTER
   group = new THREE.Group();
+  jointGroup = new THREE.Group();
   scene.add(group);
+  scene.add(jointGroup);
   orbit = new OrbitControls(camera, renderer.domElement);
   orbit.minDistance = 2;
   orbit.maxDistance = 1000;
@@ -154,21 +231,21 @@ function main() {
   exporter = new STLExporter();
 
   //Transform selected Objects
-  widthController.onChange(function (v) {
+  widthController.onFinishChange(function (v) {
     if (transformedObject != null) {
       transformedObject.scale.x =
         parameters.width / transformedObject.geometry.parameters.width;
     }
   });
 
-  heightController.onChange(function (v) {
+  heightController.onFinishChange(function (v) {
     if (transformedObject != null) {
       transformedObject.scale.y =
         parameters.width / transformedObject.geometry.parameters.width;
     }
   });
 
-  depthController.onChange(function (v) {
+  depthController.onFinishChange(function (v) {
     if (transformedObject != null) {
       transformedObject.scale.z =
         parameters.width / transformedObject.geometry.parameters.width;
@@ -186,6 +263,9 @@ function main() {
   control.setMode("translate");
   control.setTranslationSnap(1);
   control.setSize(1.2);
+
+  //Create export Button
+  //createButton("export", "export", 20, exportScene());
 
   //EXECUTE THE UPDATE
   animate();
@@ -250,6 +330,83 @@ function createBar() {
 
   scene.add(bar);
   group.add(bar);
+  animate();
+}
+
+//Joint
+function createJoint() {
+  for (let i = 0; i < 3; i++) {
+    const geometry = new THREE.CylinderGeometry(2, 2, 20, 32);
+    const material = new THREE.MeshPhysicalMaterial();
+    material.color = new THREE.Color("#69f");
+
+    const joint = new THREE.Mesh(geometry, material);
+    if (i == 0) {
+      joint.position.set(10, 2, 0);
+      joint.rotation.set(90 * (Math.PI / 180), 0, 90 * (Math.PI / 180));
+    }
+    if (i == 1) {
+      joint.position.set(0, 12, 0);
+    }
+    if (i == 2) {
+      joint.position.set(0, 2, 10);
+      joint.rotation.x = 90 * (Math.PI / 180);
+    }
+    joint.name = "joint " + jointCounter;
+    jointCounter++;
+    sceneObjects.push(joint);
+
+    scene.add(joint);
+    group.add(joint);
+    jointGroup.add(joint);
+    animate();
+  }
+  /*const geometry1 = new THREE.CylinderGeometry(2, 2, 20, 32);
+  const geometry2 = new THREE.CylinderGeometry(2, 2, 20, 32);
+  const geometry3 = new THREE.CylinderGeometry(2, 2, 20, 32);
+  const material = new THREE.MeshPhysicalMaterial();
+  material.color = new THREE.Color("#69f");
+
+  const joint1 = new THREE.Mesh(geometry1, material);
+  const joint2 = new THREE.Mesh(geometry2, material);
+  const joint3 = new THREE.Mesh(geometry3, material);
+
+  joint1.position.set(10, 2, 0);
+  joint1.rotation.z = 90 * (Math.PI / 180); // Hier wurde ein Fehler in der Rotation behoben
+  joint1.name = "joint 1";
+  scene.add(joint1);
+  sceneObjects.push(joint1);
+  group.add(joint1);
+
+  joint2.position.set(0, 12, 0);
+  joint2.name = "joint 2";
+  scene.add(joint2);
+  sceneObjects.push(joint2);
+  group.add(joint2);
+
+  joint3.position.set(0, 2, 10);
+  joint3.rotation.x = 90 * (Math.PI / 180); // Hier wurde ein Fehler in der Rotation behoben
+  joint3.name = "joint 3";
+  scene.add(joint3);
+  sceneObjects.push(joint3);
+  group.add(joint3);
+*/
+  // Hier wird eine Gruppe erstellt, um die Gelenke gemeinsam zu transformieren
+
+  //scene.add(group);
+  /*
+  // Hier wird CSG-Bibliothek angenommen (nicht standardmäßig in Three.js enthalten)
+  let bspA = CSG.fromMesh(joint1);
+  let bspB = CSG.fromMesh(joint2);
+
+  let bspD = bspA.union(bspB);
+
+  let finalJointMesh = CSG.toMesh(bspD, joint1.matrix, joint1.material);
+
+  // Hier wurde die falsche Variable `FinalJointMesh` durch die korrekte Variable `finalJointMesh` ersetzt
+  const jointFinal = new THREE.Mesh(finalJointMesh, material);
+  scene.add(jointFinal);
+*/
   animate();
 }
 

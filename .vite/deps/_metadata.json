@@ -3,39 +3,39 @@
   "browserHash": "dea72dab",
   "optimized": {
     "three": {
-      "src": "../../three/build/three.module.js",
+      "src": "../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "381f2268",
+      "fileHash": "668a0500",
       "needsInterop": false
     },
     "three/addons/controls/OrbitControls.js": {
-      "src": "../../three/examples/jsm/controls/OrbitControls.js",
+      "src": "../../node_modules/three/examples/jsm/controls/OrbitControls.js",
       "file": "three_addons_controls_OrbitControls__js.js",
-      "fileHash": "868eb2f4",
+      "fileHash": "a0c0b33d",
       "needsInterop": false
     },
     "three/addons/controls/TransformControls.js": {
-      "src": "../../three/examples/jsm/controls/TransformControls.js",
+      "src": "../../node_modules/three/examples/jsm/controls/TransformControls.js",
       "file": "three_addons_controls_TransformControls__js.js",
-      "fileHash": "10224481",
+      "fileHash": "e75009a4",
       "needsInterop": false
     },
     "three/addons/exporters/STLExporter.js": {
-      "src": "../../three/examples/jsm/exporters/STLExporter.js",
+      "src": "../../node_modules/three/examples/jsm/exporters/STLExporter.js",
       "file": "three_addons_exporters_STLExporter__js.js",
-      "fileHash": "2d5adb54",
+      "fileHash": "9609370a",
       "needsInterop": false
     },
     "lil-gui": {
-      "src": "../../lil-gui/dist/lil-gui.esm.js",
+      "src": "../../node_modules/lil-gui/dist/lil-gui.esm.js",
       "file": "lil-gui.js",
-      "fileHash": "22f21006",
+      "fileHash": "0d33abb8",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-6P5T4EWA": {
-      "file": "chunk-6P5T4EWA.js"
+    "chunk-GNSLQ2WX": {
+      "file": "chunk-GNSLQ2WX.js"
     }
   }
 }
